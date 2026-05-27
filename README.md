@@ -7,52 +7,336 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## About Laravel
+# NexoraFDV
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**NexoraFDV** is a Force de Vente (FDV) platform built with **Laravel 13** + **Livewire 4**, designed to support field sales teams with order management, customer tracking, CRM pipelines, visit scheduling, commissions, and offline sync capabilities.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Table of Contents
 
-## Learning Laravel
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+  - [Local Setup](#local-setup)
+  - [Docker](#docker)
+- [Project Structure](#project-structure)
+- [API Reference](#api-reference)
+- [Authentication](#authentication)
+- [Modules](#modules)
+- [Running Tests](#running-tests)
+- [Contributing](#contributing)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Overview
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+NexoraFDV provides a complete backend API for mobile and web sales-force applications, including:
 
-## Agentic Development
+- Customer and prospect management
+- Product catalog with pricing tables
+- Order creation, approval and cancellation workflows
+- Visit scheduling with check-in / check-out
+- CRM opportunity pipeline
+- Sales goals and commission tracking
+- Financial titles (accounts receivable)
+- Route planning (roteiros)
+- Offline synchronization support
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
+
+## Tech Stack
+
+| Layer      | Technology                     |
+|------------|-------------------------------|
+| Language   | PHP 8.3                        |
+| Framework  | Laravel 13                     |
+| Frontend   | Livewire 4                     |
+| Auth       | Laravel Sanctum (token-based)  |
+| Database   | SQLite (dev) / MySQL (prod)    |
+| Testing    | PestPHP 4                      |
+| Build      | Vite                           |
+| Container  | Docker                         |
+
+---
+
+## Requirements
+
+- PHP >= 8.3
+- Composer >= 2.x
+- Node.js >= 20.x & npm
+- SQLite (development) or MySQL 8+ (production)
+
+---
+
+## Getting Started
+
+### Local Setup
 
 ```bash
-composer require laravel/boost --dev
+# 1. Clone the repository
+git clone <repo-url> nexoraFDV
+cd nexoraFDV
 
-php artisan boost:install
+# 2. Run the automated setup script
+composer setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+The `composer setup` script will:
+1. Install PHP dependencies (`composer install`)
+2. Copy `.env.example` to `.env` (if not present)
+3. Generate the application key
+4. Run all database migrations
+5. Install Node dependencies and build frontend assets
+
+### Starting the Development Server
+
+```bash
+composer dev
+```
+
+This starts all development processes concurrently:
+- `php artisan serve` — Laravel HTTP server
+- `php artisan queue:listen` — Queue worker
+- `php artisan pail` — Log viewer
+- `npm run dev` — Vite HMR
+
+### Docker
+
+```bash
+docker-compose up --build
+```
+
+The application will be available at `http://localhost:8000`.
+
+---
+
+## Project Structure
+
+```
+app/
+├── Http/
+│   ├── Controllers/Api/   # REST API controllers
+│   ├── Requests/          # Form request validation
+│   └── Resources/         # API resource transformers
+├── Models/                # Eloquent models
+└── Providers/
+
+database/
+├── migrations/            # Database schema migrations
+├── factories/             # Model factories for testing
+└── seeders/
+
+routes/
+├── api.php                # API routes (Sanctum protected)
+└── web.php                # Web routes (Livewire)
+
+resources/
+├── js/                    # Frontend JS (Vite)
+├── css/                   # Stylesheets
+└── views/                 # Blade / Livewire views
+
+tests/
+├── Feature/               # Feature/integration tests
+└── Unit/                  # Unit tests
+```
+
+---
+
+## API Reference
+
+All API routes are prefixed with `/api`. Protected routes require a Bearer token obtained via login.
+
+### Authentication
+
+| Method | Endpoint         | Description          | Auth |
+|--------|-----------------|----------------------|------|
+| POST   | `/api/auth/login`  | Obtain access token  | No   |
+| POST   | `/api/auth/logout` | Revoke access token  | Yes  |
+| GET    | `/api/auth/me`     | Authenticated user   | Yes  |
+
+### Dashboard
+
+| Method | Endpoint                             | Description             |
+|--------|--------------------------------------|-------------------------|
+| GET    | `/api/dashboard`                     | General dashboard data  |
+| GET    | `/api/dashboard/ranking-vendedores`  | Salesperson ranking     |
+
+### Customers (Clientes)
+
+| Method | Endpoint                          | Description              |
+|--------|-----------------------------------|--------------------------|
+| GET    | `/api/clientes`                   | List customers           |
+| POST   | `/api/clientes`                   | Create customer          |
+| GET    | `/api/clientes/{id}`              | Show customer            |
+| PUT    | `/api/clientes/{id}`              | Update customer          |
+| PATCH  | `/api/clientes/{id}/bloquear`     | Block customer           |
+| PATCH  | `/api/clientes/{id}/desbloquear`  | Unblock customer         |
+| GET    | `/api/clientes/{id}/timeline`     | Customer activity timeline |
+
+### Prospects
+
+| Method | Endpoint                          | Description              |
+|--------|-----------------------------------|--------------------------|
+| GET    | `/api/prospects`                  | List prospects           |
+| POST   | `/api/prospects`                  | Create prospect          |
+| GET    | `/api/prospects/{id}`             | Show prospect            |
+| PUT    | `/api/prospects/{id}`             | Update prospect          |
+| POST   | `/api/prospects/{id}/converter`   | Convert to customer      |
+
+### Products (Produtos)
+
+| Method | Endpoint                        | Description           |
+|--------|---------------------------------|-----------------------|
+| GET    | `/api/produtos`                 | List products         |
+| GET    | `/api/produtos/{id}`            | Show product          |
+| GET    | `/api/produtos/{id}/precos`     | Product pricing       |
+
+### Orders (Pedidos)
+
+| Method | Endpoint                        | Description           |
+|--------|---------------------------------|-----------------------|
+| GET    | `/api/pedidos`                  | List orders           |
+| POST   | `/api/pedidos`                  | Create order          |
+| GET    | `/api/pedidos/{id}`             | Show order            |
+| PATCH  | `/api/pedidos/{id}/confirmar`   | Confirm order         |
+| PATCH  | `/api/pedidos/{id}/cancelar`    | Cancel order          |
+| PATCH  | `/api/pedidos/{id}/aprovar`     | Approve order         |
+
+### Visit Schedule (Visitas)
+
+| Method | Endpoint                          | Description         |
+|--------|-----------------------------------|---------------------|
+| GET    | `/api/visitas`                    | List visits         |
+| POST   | `/api/visitas`                    | Schedule visit      |
+| GET    | `/api/visitas/{id}`               | Show visit          |
+| PUT    | `/api/visitas/{id}`               | Update visit        |
+| PATCH  | `/api/visitas/{id}/check-in`      | Register check-in   |
+| PATCH  | `/api/visitas/{id}/check-out`     | Register check-out  |
+
+### CRM Opportunities (Oportunidades)
+
+| Method | Endpoint                   | Description             |
+|--------|---------------------------|-------------------------|
+| GET    | `/api/oportunidades`       | List opportunities      |
+| POST   | `/api/oportunidades`       | Create opportunity      |
+| GET    | `/api/oportunidades/{id}`  | Show opportunity        |
+| PUT    | `/api/oportunidades/{id}`  | Update opportunity      |
+
+### Sales Goals (Metas)
+
+| Method | Endpoint           | Description      |
+|--------|--------------------|------------------|
+| GET    | `/api/metas`       | List goals       |
+| POST   | `/api/metas`       | Create goal      |
+| PUT    | `/api/metas/{id}`  | Update goal      |
+
+### Commissions (Comissões)
+
+| Method | Endpoint                  | Description             |
+|--------|--------------------------|-------------------------|
+| GET    | `/api/comissoes`          | List commissions        |
+| GET    | `/api/comissoes/resumo`   | Commission summary      |
+
+### Financial Titles (Títulos Financeiros)
+
+| Method | Endpoint                                           | Description              |
+|--------|----------------------------------------------------|--------------------------|
+| GET    | `/api/titulos-financeiros`                         | List titles              |
+| GET    | `/api/titulos-financeiros/cliente/{clienteId}`     | Titles by customer       |
+| PATCH  | `/api/titulos-financeiros/{id}/registrar-pagamento`| Register payment         |
+
+### Routes (Roteiros)
+
+| Method | Endpoint              | Description      |
+|--------|-----------------------|------------------|
+| GET    | `/api/roteiros`       | List routes      |
+| POST   | `/api/roteiros`       | Create route     |
+| GET    | `/api/roteiros/{id}`  | Show route       |
+| PUT    | `/api/roteiros/{id}`  | Update route     |
+
+### Offline Sync
+
+| Method | Endpoint              | Description                      |
+|--------|-----------------------|----------------------------------|
+| GET    | `/api/sync/download`  | Download data for offline use    |
+| POST   | `/api/sync/upload`    | Upload offline changes to server |
+
+---
+
+## Authentication
+
+NexoraFDV uses **Laravel Sanctum** for API token authentication.
+
+```bash
+# Login
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "secret"
+}
+
+# Response
+{
+  "token": "<access_token>",
+  "user": { ... }
+}
+```
+
+Include the token in subsequent requests:
+
+```
+Authorization: Bearer <access_token>
+```
+
+---
+
+## Modules
+
+| Module              | Description                                              |
+|---------------------|----------------------------------------------------------|
+| **Clientes**        | Full customer lifecycle management                       |
+| **Prospects**       | Lead management with conversion to customers             |
+| **Produtos**        | Product catalog with price tables and promotions         |
+| **Pedidos**         | Sales order workflow (draft → confirmed → approved)      |
+| **Visitas**         | Field visit scheduling with geolocation check-in/out     |
+| **Oportunidades**   | CRM pipeline for tracking sales opportunities            |
+| **Metas**           | Sales goal definition and tracking per salesperson       |
+| **Comissões**       | Commission calculation and reporting                     |
+| **Financeiro**      | Accounts receivable titles and payment registration      |
+| **Roteiros**        | Daily / weekly route planning for sales reps             |
+| **Sync**            | Offline-first synchronization for mobile field use       |
+
+---
+
+## Running Tests
+
+```bash
+composer test
+```
+
+Or directly:
+
+```bash
+php artisan test
+```
+
+Tests are written with **PestPHP**. Feature tests cover API endpoints; Unit tests cover business logic.
+
+---
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Commit your changes following [Conventional Commits](https://www.conventionalcommits.org/)
+4. Push and open a Pull Request
 
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
